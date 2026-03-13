@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # 1. The LLM engine (Ollama)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  # 2. The Vector Database (Qdrant)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  # 3. Your application environment (Python)
+  app:
+    build: ./app
+    container_name: rag_app
+    depends_on:
+      - ollama
+      - qdrant
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    # Keep the container running in the background so we can exec into it
+    command: tail -f /dev/null
+    tty: true
